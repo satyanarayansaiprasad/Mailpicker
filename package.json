@@ -30,25 +30,40 @@
       "output": "dist"
     },
     "files": [
-      "**/*",
+      "main.js",
+      "index.html",
+      "renderer.js",
+      "package.json",
       "!node_modules/**/*",
-      "!dist/**/*"
+      "!dist/**/*",
+      "!*.md",
+      "!*.bat",
+      "!*.sh",
+      "!build.js",
+      "!sample_contacts.csv",
+      "!share-package/**/*",
+      "!release-package/**/*"
     ],
+    "compression": "maximum",
+    "removePackageScripts": true,
+    "removePackageKeywords": true,
     "mac": {
       "category": "public.app-category.productivity",
-      "target": "dmg"
+      "target": "dmg",
+      "compression": "maximum"
     },
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.ico",
       "requestedExecutionLevel": "asInvoker",
       "artifactName": "${productName} Setup ${version}.${ext}",
       "publisherName": "Mail Picker",
-      "verifyUpdateCodeSignature": false
+      "verifyUpdateCodeSignature": false,
+      "compression": "maximum"
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Mail Picker"

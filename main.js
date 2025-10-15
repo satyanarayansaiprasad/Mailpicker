@@ -16,7 +16,7 @@ function createWindow() {
       contextIsolation: false,
       enableRemoteModule: true
     },
-    icon: path.join(__dirname, 'assets/icon.png'), // Optional icon
+    // icon: path.join(__dirname, 'assets/icon.png'), // Optional icon
     titleBarStyle: 'default',
     show: false
   });
