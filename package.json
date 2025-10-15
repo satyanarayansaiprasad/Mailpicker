@@ -1,0 +1,45 @@
+{
+  "name": "mail-picker",
+  "version": "1.0.0",
+  "description": "Desktop application to randomly select data from CSV and send emails",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-all": "electron-builder --win --mac",
+    "build-script": "node build.js"
+  },
+  "keywords": ["electron", "csv", "email", "desktop"],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "nodemailer": "^6.9.7",
+    "papaparse": "^5.4.1"
+  },
+  "build": {
+    "appId": "com.mailpicker.app",
+    "productName": "Mail Picker",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!dist/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
