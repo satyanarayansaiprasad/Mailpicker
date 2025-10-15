@@ -10,16 +10,23 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
+    title: 'Mail Picker',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true
     },
     icon: path.join(__dirname, 'assets/icon.png'), // Optional icon
-    titleBarStyle: 'default'
+    titleBarStyle: 'default',
+    show: false
   });
 
   mainWindow.loadFile('index.html');
+
+  // Show window when ready
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
 
   // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
