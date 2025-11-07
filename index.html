@@ -15,43 +15,58 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+            overflow: hidden;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            width: 100vw;
+            height: 100vh;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
 
         .header {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 30px;
+            padding: 20px;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2em;
+            margin-bottom: 5px;
             font-weight: 300;
         }
 
         .header p {
-            font-size: 1.1em;
+            font-size: 0.9em;
             opacity: 0.9;
         }
 
         .content {
-            padding: 40px;
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .screen {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .screen.active {
+            display: flex;
         }
 
         .section {
-            margin-bottom: 40px;
-            padding: 25px;
+            margin-bottom: 25px;
+            padding: 20px;
             border: 2px solid #f0f0f0;
             border-radius: 10px;
             background: #fafafa;
@@ -59,19 +74,19 @@
 
         .section h2 {
             color: #333;
-            margin-bottom: 20px;
-            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-size: 1.3em;
             border-bottom: 2px solid #4facfe;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 600;
             color: #555;
         }
@@ -80,7 +95,7 @@
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 14px;
@@ -96,7 +111,7 @@
 
         .form-row {
             display: flex;
-            gap: 20px;
+            gap: 15px;
         }
 
         .form-row .form-group {
@@ -141,11 +156,19 @@
             background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
         }
 
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
         .file-info {
             background: #e8f4fd;
             border: 1px solid #4facfe;
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px;
             margin-top: 10px;
             display: none;
         }
@@ -160,7 +183,7 @@
             border-radius: 8px;
             padding: 15px;
             margin-top: 15px;
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
@@ -168,15 +191,12 @@
             background: white;
             border: 1px solid #e9ecef;
             border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 10px;
+            padding: 8px;
+            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .data-item:last-child {
-            margin-bottom: 0;
+            font-size: 0.9em;
         }
 
         .data-info {
@@ -190,13 +210,13 @@
 
         .data-name {
             color: #6c757d;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .status {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
             font-weight: 600;
         }
 
@@ -232,13 +252,13 @@
         }
 
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         .alert {
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
-            margin: 15px 0;
+            margin: 10px 0;
         }
 
         .alert-success {
@@ -258,175 +278,363 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
+
+        .method-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .method-card {
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .method-card:hover {
+            border-color: #4facfe;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .method-card.selected {
+            border-color: #4facfe;
+            background: #e8f4fd;
+        }
+
+        .method-card .icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .method-card h3 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .success-screen {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .success-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s;
+        }
+
+        .step-dot.active {
+            background: #4facfe;
+            width: 30px;
+            border-radius: 15px;
+        }
+
+        .whatsapp-qr {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .whatsapp-qr img {
+            max-width: 200px;
+            border: 2px solid #4facfe;
+            padding: 10px;
+            background: white;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>📧 Mail Picker</h1>
-            <p>Select random data from CSV and send personalized emails, SMS, or WhatsApp messages</p>
+            <p>Select data and send personalized messages</p>
         </div>
 
         <div class="content">
-            <!-- Email Configuration Section -->
-            <div class="section">
-                <h2>📧 Email Configuration</h2>
-                <div class="alert alert-info">
-                    <strong>Gmail Users:</strong> You need an App Password, not your regular password! 
-                    <br>1. Enable 2-Factor Authentication in Google Account
-                    <br>2. Go to Security → App passwords → Generate password for "Mail"
-                    <br>3. Use the 16-character App Password here
-                    <br><a href="https://support.google.com/accounts/answer/185833" target="_blank">📖 Google's Official Guide</a>
-                </div>
-                <div class="form-row">
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step-dot active" id="step1"></div>
+                <div class="step-dot" id="step2"></div>
+                <div class="step-dot" id="step3"></div>
+                <div class="step-dot" id="step4"></div>
+                <div class="step-dot" id="step5"></div>
+            </div>
+
+            <!-- Screen 1: Data Selection -->
+            <div class="screen active" id="screen1">
+                <div class="section">
+                    <h2>📁 Load CSV File</h2>
                     <div class="form-group">
-                        <label for="emailService">Email Service</label>
-                        <select id="emailService">
-                            <option value="gmail">Gmail</option>
-                            <option value="outlook">Outlook</option>
-                            <option value="yahoo">Yahoo</option>
-                            <option value="custom">Custom SMTP</option>
+                        <button class="btn" onclick="selectCSVFile()">Choose CSV File</button>
+                    </div>
+                    <div id="fileInfo" class="file-info">
+                        <strong>Selected File:</strong> <span id="fileName"></span><br>
+                        <strong>Total Records:</strong> <span id="totalRecords"></span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🎲 Data Selection</h2>
+                    <div class="form-group">
+                        <label for="selectionMode">Selection Mode</label>
+                        <select id="selectionMode" onchange="toggleSelectionMode()">
+                            <option value="random">🎲 Random Selection</option>
+                            <option value="serial">📋 Serial Selection</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="senderEmail">Your Email</label>
-                        <input type="email" id="senderEmail" placeholder="your-email@example.com">
+
+                    <div id="randomSelectionOptions">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="numRecords">Number of Records</label>
+                                <input type="number" id="numRecords" min="1" max="100" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="emailColumn">Email Column</label>
+                                <input type="text" id="emailColumn" placeholder="email" value="email">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="serialSelectionOptions" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="startIndex">Start Index</label>
+                                <input type="number" id="startIndex" min="1" value="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="endIndex">End Index</label>
+                                <input type="number" id="endIndex" min="1" value="10">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="emailColumnSerial">Email Column</label>
+                            <input type="text" id="emailColumnSerial" placeholder="email" value="email">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nameColumn">Name Column (optional)</label>
+                            <input type="text" id="nameColumn" placeholder="name" value="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="phoneColumn">Phone Column (optional)</label>
+                            <input type="text" id="phoneColumn" placeholder="phone" value="phone">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-secondary" onclick="selectData()">Select Data</button>
+                    <button class="btn btn-danger" onclick="clearSelection()">Clear Selection</button>
+
+                    <div id="selectedDataSection" style="margin-top: 15px;">
+                        <div id="selectedData" class="selected-data"></div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="senderPassword">Password / App Password</label>
-                    <input type="password" id="senderPassword" placeholder="Enter your password or app password">
-                </div>
-                <button class="btn btn-secondary" onclick="saveEmailConfig()">Save Configuration</button>
-                <button class="btn" onclick="loadEmailConfig()">Load Configuration</button>
-                <button class="btn btn-success" onclick="testEmailConfig()">Test Email</button>
-                <button class="btn" onclick="refreshEmailConfig()">Refresh Config</button>
-            </div>
 
-            <!-- CSV File Selection Section -->
-            <div class="section">
-                <h2>📁 CSV File Selection</h2>
-                <div class="form-group">
-                    <label for="csvFile">Select CSV File</label>
-                    <button class="btn" onclick="selectCSVFile()">Choose CSV File</button>
-                </div>
-                <div id="fileInfo" class="file-info">
-                    <strong>Selected File:</strong> <span id="fileName"></span><br>
-                    <strong>Total Records:</strong> <span id="totalRecords"></span>
+                <div class="navigation">
+                    <div></div>
+                    <button class="btn btn-success" onclick="goToMethodSelection()" id="nextToMethod" disabled>Next: Choose Method →</button>
                 </div>
             </div>
 
-            <!-- Random Selection Section -->
-            <div class="section">
-                <h2>🎲 Random Data Selection</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="numRecords">Number of Records to Select</label>
-                        <input type="number" id="numRecords" min="1" max="100" value="10">
-                    </div>
-                    <div class="form-group">
-                        <label for="emailColumn">Email Column Name</label>
-                        <input type="text" id="emailColumn" placeholder="email" value="email">
+            <!-- Screen 2: Method Selection -->
+            <div class="screen" id="screen2">
+                <div class="section">
+                    <h2>📤 Choose Sending Method</h2>
+                    <div class="method-selector">
+                        <div class="method-card" onclick="selectMethod('email')">
+                            <div class="icon">📧</div>
+                            <h3>Email</h3>
+                            <p>Send via SMTP</p>
+                        </div>
+                        <div class="method-card" onclick="selectMethod('sms')">
+                            <div class="icon">📱</div>
+                            <h3>SMS</h3>
+                            <p>Send via API</p>
+                        </div>
+                        <div class="method-card" onclick="selectMethod('whatsapp')">
+                            <div class="icon">💬</div>
+                            <h3>WhatsApp</h3>
+                            <p>Send automatically</p>
+                        </div>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="nameColumn">Name Column Name (optional)</label>
-                        <input type="text" id="nameColumn" placeholder="name" value="name">
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" onclick="goToScreen(1)">← Back</button>
+                    <button class="btn btn-success" onclick="goToConfiguration()" id="nextToConfig" disabled>Next: Configure →</button>
+                </div>
+            </div>
+
+            <!-- Screen 3: Configuration -->
+            <div class="screen" id="screen3">
+                <!-- Email Configuration -->
+                <div id="emailConfigSection" class="section">
+                    <h2>📧 Email Configuration</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="emailService">Email Service</label>
+                            <select id="emailService">
+                                <option value="gmail">Gmail</option>
+                                <option value="outlook">Outlook</option>
+                                <option value="yahoo">Yahoo</option>
+                                <option value="custom">Custom SMTP</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="senderEmail">Your Email</label>
+                            <input type="email" id="senderEmail" placeholder="your-email@example.com">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="phoneColumn">Phone Column Name (optional)</label>
-                        <input type="text" id="phoneColumn" placeholder="phone" value="phone">
+                        <label for="senderPassword">Password / App Password</label>
+                        <input type="password" id="senderPassword" placeholder="Enter password or app password">
+                    </div>
+                    <button class="btn btn-success" onclick="testEmailConfig()">Test Connection</button>
+                    <div id="emailTestResult"></div>
+                </div>
+
+                <!-- SMS Configuration -->
+                <div id="smsConfigSection" class="section hidden">
+                    <h2>📱 SMS Configuration</h2>
+                    <div class="form-group">
+                        <label for="smsProvider">SMS Provider</label>
+                        <select id="smsProvider" onchange="toggleSMSProviderConfig()">
+                            <option value="twilio">Twilio (Free $15 credit)</option>
+                            <option value="completeapi">CompleteAPI (Free credits)</option>
+                            <option value="smsmode">SMSMode (20 free test credits)</option>
+                        </select>
+                    </div>
+                    <div id="twilioConfig">
+                        <div class="form-group">
+                            <label for="twilioAccountSid">Account SID</label>
+                            <input type="text" id="twilioAccountSid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label for="twilioAuthToken">Auth Token</label>
+                            <input type="password" id="twilioAuthToken" placeholder="Your auth token">
+                        </div>
+                        <div class="form-group">
+                            <label for="twilioFromNumber">From Number (+1234567890)</label>
+                            <input type="text" id="twilioFromNumber" placeholder="+1234567890">
+                        </div>
+                    </div>
+                    <div id="completeapiConfig" class="hidden">
+                        <div class="form-group">
+                            <label for="completeApiKey">API Key</label>
+                            <input type="text" id="completeApiKey" placeholder="Your API key">
+                        </div>
+                    </div>
+                    <div id="smsmodeConfig" class="hidden">
+                        <div class="form-group">
+                            <label for="smsmodeToken">Access Token</label>
+                            <input type="text" id="smsmodeToken" placeholder="Your access token">
+                        </div>
                     </div>
                 </div>
-                <button class="btn btn-secondary" onclick="selectRandomData()">Select Random Data</button>
-                <button class="btn btn-danger" onclick="clearSelection()">Clear Selection</button>
+
+                <!-- WhatsApp Configuration -->
+                <div id="whatsappConfigSection" class="section hidden">
+                    <h2>💬 WhatsApp Configuration</h2>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="margin-bottom: 10px;">
+                            <span id="whatsappStatus" style="font-weight: 600; color: red;">Not Connected</span>
+                        </div>
+                        <div id="whatsappQRCode" class="whatsapp-qr" style="display: none;"></div>
+                        <button class="btn btn-secondary" onclick="initWhatsApp()">Connect WhatsApp</button>
+                    </div>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" onclick="goToScreen(2)">← Back</button>
+                    <button class="btn btn-success" onclick="goToComposition()" id="nextToComposition" disabled>Next: Compose →</button>
+                </div>
             </div>
 
-            <!-- Selected Data Display -->
-            <div id="selectedDataSection" class="section hidden">
-                <h2>👥 Selected Recipients</h2>
-                <div id="selectedData" class="selected-data"></div>
+            <!-- Screen 4: Composition -->
+            <div class="screen" id="screen4">
+                <!-- Email Composition -->
+                <div id="emailCompositionSection" class="section">
+                    <h2>✍️ Email Composition</h2>
+                    <div class="form-group">
+                        <label for="emailSubject">Subject</label>
+                        <input type="text" id="emailSubject" placeholder="Enter email subject">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailMessage">Message (use {name} for personalization)</label>
+                        <textarea id="emailMessage" rows="8" placeholder="Enter your email message. Use {name} to personalize."></textarea>
+                    </div>
+                </div>
+
+                <!-- SMS Composition -->
+                <div id="smsCompositionSection" class="section hidden">
+                    <h2>📱 SMS Composition</h2>
+                    <div class="form-group">
+                        <label for="smsMessage">SMS Message (use {name} for personalization)</label>
+                        <textarea id="smsMessage" rows="6" placeholder="Enter your SMS message. Use {name} to personalize."></textarea>
+                    </div>
+                </div>
+
+                <!-- WhatsApp Composition -->
+                <div id="whatsappCompositionSection" class="section hidden">
+                    <h2>💬 WhatsApp Composition</h2>
+                    <div class="form-group">
+                        <label for="whatsappMessage">WhatsApp Message (use {name} for personalization)</label>
+                        <textarea id="whatsappMessage" rows="6" placeholder="Enter your WhatsApp message. Links are auto-detected!"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="selectWhatsAppMedia()">📎 Attach Media (Optional)</button>
+                    </div>
+                    <div id="whatsappMediaPreview" style="display: none; margin: 10px 0;"></div>
+                    <div id="whatsappMediaInfo" style="display: none;"></div>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" onclick="goToScreen(3)">← Back</button>
+                    <button class="btn btn-success" onclick="startSending()" id="startSendingBtn">Send Messages →</button>
+                </div>
             </div>
 
-            <!-- Email Composition Section -->
-            <div class="section">
-                <h2>✍️ Email Composition</h2>
-                <div class="form-group">
-                    <label for="emailSubject">Subject</label>
-                    <input type="text" id="emailSubject" placeholder="Enter email subject">
+            <!-- Screen 5: Progress -->
+            <div class="screen" id="screen5">
+                <div class="section">
+                    <h2>📊 Sending Progress</h2>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div id="progressText" style="margin: 10px 0;">Preparing to send...</div>
+                    <div id="resultsContainer"></div>
                 </div>
-                <div class="form-group">
-                    <label for="emailMessage">Message (use {name} for personalization)</label>
-                    <textarea id="emailMessage" rows="8" placeholder="Enter your email message. Use {name} to personalize with recipient's name."></textarea>
-                </div>
-                <button class="btn btn-success" onclick="sendEmails()" id="sendBtn">Send Emails</button>
             </div>
 
-            <!-- Progress Section -->
-            <div id="progressSection" class="section hidden">
-                <h2>📊 Sending Progress</h2>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
+            <!-- Screen 6: Success -->
+            <div class="screen" id="screen6">
+                <div class="success-screen">
+                    <div class="success-icon">✅</div>
+                    <h2 style="color: #2ecc71; margin-bottom: 15px;">Messages Sent Successfully!</h2>
+                    <div id="successSummary" style="margin-bottom: 20px;"></div>
+                    <button class="btn btn-success" onclick="goToHome()">Back to Home</button>
                 </div>
-                <div id="progressText">Preparing to send emails...</div>
-                <div id="emailResults"></div>
-            </div>
-
-            <!-- SMS Messaging Section -->
-            <div class="section">
-                <h2>📱 SMS Messaging</h2>
-                <div class="alert alert-info">
-                    <strong>Note:</strong> This feature opens your system's default SMS app with pre-filled phone number and message. 
-                    You'll need to manually send each message. This is a free solution that doesn't require any premium services.
-                </div>
-                <div class="form-group">
-                    <label for="smsMessage">SMS Message (use {name} for personalization)</label>
-                    <textarea id="smsMessage" rows="6" placeholder="Enter your SMS message. Use {name} to personalize with recipient's name."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="smsDelay">Delay between opens (milliseconds)</label>
-                    <input type="number" id="smsDelay" min="1000" max="10000" value="2000" placeholder="2000">
-                    <small style="color: #666;">Time to wait between opening each SMS app (default: 2000ms)</small>
-                </div>
-                <button class="btn btn-success" onclick="sendSMSMessages()" id="sendSMSBtn">Open SMS Apps</button>
-            </div>
-
-            <!-- SMS Progress Section -->
-            <div id="smsProgressSection" class="section hidden">
-                <h2>📊 SMS Progress</h2>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="smsProgressFill"></div>
-                </div>
-                <div id="smsProgressText">Preparing to open SMS apps...</div>
-            </div>
-
-            <!-- WhatsApp Messaging Section -->
-            <div class="section">
-                <h2>💬 WhatsApp Messaging</h2>
-                <div class="alert alert-info">
-                    <strong>Note:</strong> This feature opens WhatsApp Web/Desktop with pre-filled phone number and message. 
-                    You'll need to manually send each message. Make sure WhatsApp Web is logged in. This is a free solution that doesn't require any premium services.
-                </div>
-                <div class="form-group">
-                    <label for="whatsappMessage">WhatsApp Message (use {name} for personalization)</label>
-                    <textarea id="whatsappMessage" rows="6" placeholder="Enter your WhatsApp message. Use {name} to personalize with recipient's name."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="whatsappDelay">Delay between opens (milliseconds)</label>
-                    <input type="number" id="whatsappDelay" min="1000" max="10000" value="2000" placeholder="2000">
-                    <small style="color: #666;">Time to wait between opening each WhatsApp chat (default: 2000ms)</small>
-                </div>
-                <button class="btn btn-success" onclick="sendWhatsAppMessages()" id="sendWhatsAppBtn">Open WhatsApp Chats</button>
-            </div>
-
-            <!-- WhatsApp Progress Section -->
-            <div id="whatsappProgressSection" class="section hidden">
-                <h2>📊 WhatsApp Progress</h2>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="whatsappProgressFill"></div>
-                </div>
-                <div id="whatsappProgressText">Preparing to open WhatsApp chats...</div>
             </div>
         </div>
     </div>

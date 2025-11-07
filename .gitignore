@@ -33,6 +33,7 @@ bower_components
 build/Release
 
 # Dependency directories
+
 jspm_packages/
 
 # Optional npm cache directory
@@ -77,6 +78,10 @@ dist_electron/
 
 # Email configuration (contains sensitive data)
 email-config.json
+
+# WhatsApp Web.js authentication data
+.wwebjs_auth/
+.wwebjs_cache/
 
 # OS generated files
 .DS_Store

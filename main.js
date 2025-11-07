@@ -4,13 +4,19 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const nodemailer = require('nodemailer');
 const { exec } = require('child_process');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+const axios = require('axios');
+const mime = require('mime-types');
 
 let mainWindow;
+let whatsappClient = null;
+let whatsappReady = false;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1000,
-    height: 900,
+    height: 800,
     title: 'Mail Picker',
     webPreferences: {
       nodeIntegration: true,
@@ -29,10 +35,9 @@ function createWindow() {
     mainWindow.show();
   });
 
-  // Open DevTools in development
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools();
-  }
+  // Open DevTools to see console logs (helpful for debugging WhatsApp)
+  // Uncomment the line below to see console logs
+  // mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
@@ -287,8 +292,9 @@ ipcMain.handle('open-sms', async (event, { phoneNumber, message }) => {
     }
     
     exec(command, (error) => {
+      // Ignore errors silently to avoid EPIPE issues in Electron
       if (error) {
-        console.error('Error opening SMS app:', error);
+        // Error opening SMS app - can be ignored
       }
     });
     
@@ -298,7 +304,7 @@ ipcMain.handle('open-sms', async (event, { phoneNumber, message }) => {
   }
 });
 
-// Handle opening WhatsApp
+// Handle opening WhatsApp (manual method)
 ipcMain.handle('open-whatsapp', async (event, { phoneNumber, message }) => {
   try {
     const cleanPhone = phoneNumber.replace(/\D/g, ''); // Remove non-digits
@@ -310,6 +316,237 @@ ipcMain.handle('open-whatsapp', async (event, { phoneNumber, message }) => {
     await shell.openExternal(whatsappUrl);
     
     return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Initialize WhatsApp Client
+ipcMain.handle('init-whatsapp', async () => {
+  try {
+    if (whatsappClient) {
+      if (whatsappReady) {
+        return { success: true, ready: true, message: 'WhatsApp client already connected' };
+      }
+      // If client exists but not ready, destroy it and create new one
+      try {
+        await whatsappClient.destroy();
+      } catch (e) {
+        // Ignore destroy errors
+      }
+      whatsappClient = null;
+    }
+
+    whatsappClient = new Client({
+      authStrategy: new LocalAuth({
+        dataPath: path.join(__dirname, '.wwebjs_auth')
+      }),
+      puppeteer: {
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu'
+        ]
+      }
+    });
+
+    // Set up event listeners BEFORE initializing
+    whatsappClient.on('qr', (qr) => {
+      // Send QR code to renderer immediately
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        console.log('Sending QR code to renderer...');
+        mainWindow.webContents.send('whatsapp-qr', qr);
+      } else {
+        console.error('Main window not available for QR code');
+      }
+    });
+
+    whatsappClient.on('ready', () => {
+      whatsappReady = true;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('whatsapp-ready', true);
+      }
+    });
+
+    whatsappClient.on('authenticated', () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('whatsapp-authenticated');
+      }
+    });
+
+    whatsappClient.on('auth_failure', (msg) => {
+      whatsappReady = false;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('whatsapp-error', `Authentication failed: ${msg}`);
+      }
+    });
+
+    whatsappClient.on('disconnected', (reason) => {
+      whatsappReady = false;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('whatsapp-disconnected', reason);
+      }
+    });
+
+    whatsappClient.on('loading_screen', (percent, message) => {
+      // Remove console.log to avoid EPIPE errors
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('whatsapp-loading', { percent, message });
+      }
+    });
+
+    await whatsappClient.initialize();
+    
+    return { success: true, ready: false, message: 'WhatsApp client initializing. Please scan QR code.' };
+  } catch (error) {
+    whatsappClient = null;
+    whatsappReady = false;
+    return { success: false, error: error.message || 'Unknown error occurred' };
+  }
+});
+
+// Handle file selection for WhatsApp media
+ipcMain.handle('select-whatsapp-media', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [
+      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'] },
+      { name: 'Documents', extensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'] },
+      { name: 'Videos', extensions: ['mp4', 'avi', 'mov', 'mkv'] },
+      { name: 'Audio', extensions: ['mp3', 'wav', 'ogg'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    const filePath = result.filePaths[0];
+    const stats = fs.statSync(filePath);
+    const mimeType = mime.lookup(filePath) || 'application/octet-stream';
+    
+    return {
+      success: true,
+      filePath: filePath,
+      fileName: path.basename(filePath),
+      fileSize: stats.size,
+      mimeType: mimeType,
+      isImage: mimeType.startsWith('image/'),
+      isVideo: mimeType.startsWith('video/'),
+      isAudio: mimeType.startsWith('audio/'),
+      isDocument: !mimeType.startsWith('image/') && !mimeType.startsWith('video/') && !mimeType.startsWith('audio/')
+    };
+  }
+  return { success: false };
+});
+
+// Send WhatsApp message automatically with optional media
+ipcMain.handle('send-whatsapp-auto', async (event, { phoneNumber, message, mediaPath, mediaCaption }) => {
+  try {
+    if (!whatsappClient || !whatsappReady) {
+      return { success: false, error: 'WhatsApp client not ready. Please initialize and scan QR code first.' };
+    }
+
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    // Format: country code + number (e.g., 911234567890 for India)
+    const formattedNumber = cleanPhone.includes('@c.us') ? cleanPhone : `${cleanPhone}@c.us`;
+    
+    let result;
+    
+    // If media is provided, send media with caption
+    if (mediaPath && fs.existsSync(mediaPath)) {
+      const media = MessageMedia.fromFilePath(mediaPath);
+      const caption = mediaCaption || message || '';
+      
+      result = await whatsappClient.sendMessage(formattedNumber, media, { caption: caption });
+    } else {
+      // Send text message only
+      result = await whatsappClient.sendMessage(formattedNumber, message);
+    }
+    
+    return { success: true, messageId: result.id._serialized };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Send SMS via API
+ipcMain.handle('send-sms-api', async (event, { phoneNumber, message, apiConfig }) => {
+  try {
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    let result;
+
+    switch (apiConfig.provider) {
+      case 'twilio':
+        // Twilio API
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${apiConfig.accountSid}/Messages.json`;
+        const twilioAuth = Buffer.from(`${apiConfig.accountSid}:${apiConfig.authToken}`).toString('base64');
+        
+        result = await axios.post(twilioUrl, 
+          new URLSearchParams({
+            From: apiConfig.fromNumber,
+            To: `+${cleanPhone}`,
+            Body: message
+          }),
+          {
+            headers: {
+              'Authorization': `Basic ${twilioAuth}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }
+        );
+        return { success: true, messageId: result.data.sid, provider: 'twilio' };
+
+      case 'completeapi':
+        // CompleteAPI
+        const completeApiUrl = 'https://api.completeapi.com/v1/sms/send';
+        result = await axios.post(completeApiUrl, {
+          api_key: apiConfig.apiKey,
+          to: cleanPhone,
+          message: message,
+          from: apiConfig.fromNumber || 'MailPicker'
+        });
+        return { success: true, messageId: result.data.message_id || 'sent', provider: 'completeapi' };
+
+      case 'smsmode':
+        // SMSMode API
+        const smsmodeUrl = 'https://api.smsmode.com/http/1.6/sendSMS.do';
+        result = await axios.get(smsmodeUrl, {
+          params: {
+            accessToken: apiConfig.accessToken,
+            message: message,
+            numero: cleanPhone
+          }
+        });
+        return { success: true, messageId: result.data, provider: 'smsmode' };
+
+      default:
+        return { success: false, error: 'Unknown SMS provider' };
+    }
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+});
+
+// Get WhatsApp connection status
+ipcMain.handle('whatsapp-status', async () => {
+  return { ready: whatsappReady, initialized: !!whatsappClient };
+});
+
+// Disconnect WhatsApp
+ipcMain.handle('disconnect-whatsapp', async () => {
+  try {
+    if (whatsappClient) {
+      await whatsappClient.destroy();
+      whatsappClient = null;
+      whatsappReady = false;
+      return { success: true };
+    }
+    return { success: true, message: 'No active connection' };
   } catch (error) {
     return { success: false, error: error.message };
   }
