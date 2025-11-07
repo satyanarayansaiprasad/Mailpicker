@@ -1,0 +1,40 @@
+========================================
+  MAIL PICKER - INSTALLATION GUIDE
+========================================
+
+QUICK INSTALLATION:
+
+MAC USERS:
+----------
+1. Double-click "Mail Picker-1.0.0-arm64.dmg"
+2. Drag "Mail Picker" to Applications folder
+3. Open from Applications
+4. If security warning appears: Right-click → Open → Click "Open"
+
+WINDOWS USERS:
+--------------
+1. Double-click "Mail Picker Setup 1.0.0.exe"
+2. Follow the installation wizard
+3. Launch from Start Menu or Desktop
+
+SYSTEM REQUIREMENTS:
+--------------------
+Mac: macOS 10.12+, Apple Silicon (M1/M2/M3)
+Windows: Windows 10+, 64-bit processor
+
+FEATURES:
+---------
+✓ Send personalized emails
+✓ Send SMS messages (opens SMS app)
+✓ Send WhatsApp messages (opens WhatsApp)
+✓ Random recipient selection from CSV
+✓ Message personalization with {name}
+
+IMPORTANT NOTES:
+----------------
+- SMS/WhatsApp: Opens apps with pre-filled messages (you send manually)
+- Email: Requires email credentials (Gmail needs App Password)
+- See README.md for detailed instructions
+
+For detailed instructions, see README.md file.
+
