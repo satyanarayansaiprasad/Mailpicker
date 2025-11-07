@@ -122,12 +122,21 @@ async function loadCSVFile(filePath) {
                 col.toLowerCase().includes('name') || 
                 col.toLowerCase().includes('first')
             );
+            const phoneCol = columns.find(col => 
+                col.toLowerCase().includes('phone') || 
+                col.toLowerCase().includes('mobile') ||
+                col.toLowerCase().includes('number') ||
+                col.toLowerCase().includes('contact')
+            );
             
             if (emailCol) {
                 document.getElementById('emailColumn').value = emailCol;
             }
             if (nameCol) {
                 document.getElementById('nameColumn').value = nameCol;
+            }
+            if (phoneCol) {
+                document.getElementById('phoneColumn').value = phoneCol;
             }
         }
     } catch (error) {
@@ -145,21 +154,26 @@ function selectRandomData() {
     const numRecords = parseInt(document.getElementById('numRecords').value);
     const emailColumn = document.getElementById('emailColumn').value;
     const nameColumn = document.getElementById('nameColumn').value;
+    const phoneColumn = document.getElementById('phoneColumn').value;
 
-    if (!emailColumn) {
-        showAlert('Please specify the email column name', 'error');
+    // Check if at least email or phone column is specified
+    if (!emailColumn && !phoneColumn) {
+        showAlert('Please specify at least email or phone column name', 'error');
         return;
     }
 
-    // Filter data that has email addresses
-    const validData = csvData.filter(row => 
-        row[emailColumn] && 
-        row[emailColumn].includes('@') && 
-        row[emailColumn].includes('.')
-    );
+    // Filter data that has email addresses or phone numbers
+    const validData = csvData.filter(row => {
+        const hasEmail = emailColumn && row[emailColumn] && 
+                        row[emailColumn].includes('@') && 
+                        row[emailColumn].includes('.');
+        const hasPhone = phoneColumn && row[phoneColumn] && 
+                        row[phoneColumn].replace(/\D/g, '').length >= 10;
+        return hasEmail || hasPhone;
+    });
 
     if (validData.length === 0) {
-        showAlert('No valid email addresses found in the specified column', 'error');
+        showAlert('No valid email addresses or phone numbers found', 'error');
         return;
     }
 
@@ -185,14 +199,19 @@ function displaySelectedData() {
 
     const emailColumn = document.getElementById('emailColumn').value;
     const nameColumn = document.getElementById('nameColumn').value;
+    const phoneColumn = document.getElementById('phoneColumn').value;
 
     selectedData.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'data-item';
+        const email = emailColumn && item[emailColumn] ? item[emailColumn] : 'No email';
+        const phone = phoneColumn && item[phoneColumn] ? item[phoneColumn] : 'No phone';
+        const name = nameColumn && item[nameColumn] ? item[nameColumn] : 'No name';
+        
         div.innerHTML = `
             <div class="data-info">
-                <div class="data-email">${item[emailColumn] || 'No email'}</div>
-                <div class="data-name">${item[nameColumn] || 'No name'}</div>
+                <div class="data-email">${email}</div>
+                <div class="data-name">${name} | ${phone}</div>
             </div>
             <div class="status pending">Selected</div>
         `;
@@ -305,6 +324,219 @@ function displayEmailResults(results) {
 
     // Final progress update
     progressText.textContent = `Completed! ${successCount} sent, ${errorCount} failed`;
+}
+
+// SMS/WhatsApp Functions
+function validatePhoneNumber(phone) {
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    // Check if it has at least 10 digits (minimum for a phone number)
+    return cleaned.length >= 10;
+}
+
+function formatPhoneNumber(phone) {
+    // Remove all non-digit characters
+    return phone.replace(/\D/g, '');
+}
+
+async function openSMS(phoneNumber, message) {
+    if (!validatePhoneNumber(phoneNumber)) {
+        showAlert('Invalid phone number format', 'error');
+        return;
+    }
+
+    try {
+        const result = await ipcRenderer.invoke('open-sms', {
+            phoneNumber: formatPhoneNumber(phoneNumber),
+            message: message
+        });
+        
+        if (result.success) {
+            showAlert('SMS app opened! Please send the message manually.', 'success');
+        } else {
+            showAlert('Failed to open SMS app: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showAlert('Error opening SMS app: ' + error.message, 'error');
+    }
+}
+
+async function openWhatsApp(phoneNumber, message) {
+    if (!validatePhoneNumber(phoneNumber)) {
+        showAlert('Invalid phone number format', 'error');
+        return;
+    }
+
+    try {
+        const result = await ipcRenderer.invoke('open-whatsapp', {
+            phoneNumber: formatPhoneNumber(phoneNumber),
+            message: message
+        });
+        
+        if (result.success) {
+            showAlert('WhatsApp opened! Please send the message manually.', 'success');
+        } else {
+            showAlert('Failed to open WhatsApp: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showAlert('Error opening WhatsApp: ' + error.message, 'error');
+    }
+}
+
+async function sendSMSMessages() {
+    if (selectedData.length === 0) {
+        showAlert('Please select some data first', 'error');
+        return;
+    }
+
+    const message = document.getElementById('smsMessage').value;
+    const phoneColumn = document.getElementById('phoneColumn').value;
+
+    if (!message) {
+        showAlert('Please enter a message', 'error');
+        return;
+    }
+
+    if (!phoneColumn) {
+        showAlert('Please specify the phone column name', 'error');
+        return;
+    }
+
+    const nameColumn = document.getElementById('nameColumn').value;
+    const delay = parseInt(document.getElementById('smsDelay').value) || 2000;
+
+    // Prepare recipients with valid phone numbers
+    const recipients = selectedData
+        .map(item => ({
+            phone: item[phoneColumn],
+            name: item[nameColumn] || 'Valued Customer'
+        }))
+        .filter(recipient => recipient.phone && validatePhoneNumber(recipient.phone));
+
+    if (recipients.length === 0) {
+        showAlert('No valid phone numbers found in selected data', 'error');
+        return;
+    }
+
+    // Show progress
+    document.getElementById('smsProgressSection').classList.remove('hidden');
+    document.getElementById('sendSMSBtn').disabled = true;
+    document.getElementById('smsProgressText').textContent = `Opening SMS app for ${recipients.length} recipients...`;
+    document.getElementById('smsProgressFill').style.width = '0%';
+
+    try {
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < recipients.length; i++) {
+            const recipient = recipients[i];
+            const personalizedMessage = message.replace(/\{name\}/g, recipient.name);
+
+            try {
+                await openSMS(recipient.phone, personalizedMessage);
+                successCount++;
+
+                // Update progress
+                const progress = ((i + 1) / recipients.length) * 100;
+                document.getElementById('smsProgressFill').style.width = progress + '%';
+                document.getElementById('smsProgressText').textContent = 
+                    `Opened SMS app ${i + 1} of ${recipients.length}...`;
+
+                // Wait before opening next (except for last one)
+                if (i < recipients.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            } catch (error) {
+                errorCount++;
+            }
+        }
+
+        document.getElementById('smsProgressText').textContent = 
+            `Completed! Opened ${successCount} SMS apps, ${errorCount} failed. Please send messages manually.`;
+        showAlert(`SMS apps opened for ${successCount} recipients!`, 'success');
+    } catch (error) {
+        showAlert('Error opening SMS apps: ' + error.message, 'error');
+    } finally {
+        document.getElementById('sendSMSBtn').disabled = false;
+    }
+}
+
+async function sendWhatsAppMessages() {
+    if (selectedData.length === 0) {
+        showAlert('Please select some data first', 'error');
+        return;
+    }
+
+    const message = document.getElementById('whatsappMessage').value;
+    const phoneColumn = document.getElementById('phoneColumn').value;
+
+    if (!message) {
+        showAlert('Please enter a message', 'error');
+        return;
+    }
+
+    if (!phoneColumn) {
+        showAlert('Please specify the phone column name', 'error');
+        return;
+    }
+
+    const nameColumn = document.getElementById('nameColumn').value;
+    const delay = parseInt(document.getElementById('whatsappDelay').value) || 2000;
+
+    // Prepare recipients with valid phone numbers
+    const recipients = selectedData
+        .map(item => ({
+            phone: item[phoneColumn],
+            name: item[nameColumn] || 'Valued Customer'
+        }))
+        .filter(recipient => recipient.phone && validatePhoneNumber(recipient.phone));
+
+    if (recipients.length === 0) {
+        showAlert('No valid phone numbers found in selected data', 'error');
+        return;
+    }
+
+    // Show progress
+    document.getElementById('whatsappProgressSection').classList.remove('hidden');
+    document.getElementById('sendWhatsAppBtn').disabled = true;
+    document.getElementById('whatsappProgressText').textContent = `Opening WhatsApp for ${recipients.length} recipients...`;
+    document.getElementById('whatsappProgressFill').style.width = '0%';
+
+    try {
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < recipients.length; i++) {
+            const recipient = recipients[i];
+            const personalizedMessage = message.replace(/\{name\}/g, recipient.name);
+
+            try {
+                await openWhatsApp(recipient.phone, personalizedMessage);
+                successCount++;
+
+                // Update progress
+                const progress = ((i + 1) / recipients.length) * 100;
+                document.getElementById('whatsappProgressFill').style.width = progress + '%';
+                document.getElementById('whatsappProgressText').textContent = 
+                    `Opened WhatsApp ${i + 1} of ${recipients.length}...`;
+
+                // Wait before opening next (except for last one)
+                if (i < recipients.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            } catch (error) {
+                errorCount++;
+            }
+        }
+
+        document.getElementById('whatsappProgressText').textContent = 
+            `Completed! Opened ${successCount} WhatsApp chats, ${errorCount} failed. Please send messages manually.`;
+        showAlert(`WhatsApp opened for ${successCount} recipients!`, 'success');
+    } catch (error) {
+        showAlert('Error opening WhatsApp: ' + error.message, 'error');
+    } finally {
+        document.getElementById('sendWhatsAppBtn').disabled = false;
+    }
 }
 
 // Utility Functions

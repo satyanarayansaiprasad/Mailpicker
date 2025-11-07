@@ -1,7 +1,7 @@
 {
   "name": "mail-picker",
   "version": "1.0.0",
-  "description": "Desktop application to randomly select data from CSV and send emails",
+  "description": "Desktop application to randomly select data from CSV and send emails, SMS, or WhatsApp messages",
   "main": "main.js",
   "scripts": {
     "start": "electron .",

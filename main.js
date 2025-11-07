@@ -1,15 +1,16 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
 const nodemailer = require('nodemailer');
+const { exec } = require('child_process');
 
 let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1000,
-    height: 700,
+    height: 900,
     title: 'Mail Picker',
     webPreferences: {
       nodeIntegration: true,
@@ -259,6 +260,56 @@ ipcMain.handle('test-email', async (event, emailConfig) => {
     });
 
     return { success: true, messageId: testEmail.messageId };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Handle opening SMS app
+ipcMain.handle('open-sms', async (event, { phoneNumber, message }) => {
+  try {
+    const platform = process.platform;
+    const encodedMessage = encodeURIComponent(message);
+    const cleanPhone = phoneNumber.replace(/\D/g, ''); // Remove non-digits
+    
+    let command;
+    
+    if (platform === 'darwin') {
+      // macOS - opens Messages app
+      command = `open "sms:${cleanPhone}&body=${encodedMessage}"`;
+      // Alternative: open -a Messages "sms:${cleanPhone}&body=${encodedMessage}"
+    } else if (platform === 'win32') {
+      // Windows - opens default SMS app or Skype
+      command = `start "" "sms:${cleanPhone}?body=${encodedMessage}"`;
+    } else {
+      // Linux - opens default SMS handler
+      command = `xdg-open "sms:${cleanPhone}?body=${encodedMessage}"`;
+    }
+    
+    exec(command, (error) => {
+      if (error) {
+        console.error('Error opening SMS app:', error);
+      }
+    });
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Handle opening WhatsApp
+ipcMain.handle('open-whatsapp', async (event, { phoneNumber, message }) => {
+  try {
+    const cleanPhone = phoneNumber.replace(/\D/g, ''); // Remove non-digits
+    const encodedMessage = encodeURIComponent(message);
+    
+    // WhatsApp Web URL format: https://wa.me/PHONENUMBER?text=MESSAGE
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+    
+    await shell.openExternal(whatsappUrl);
+    
+    return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }

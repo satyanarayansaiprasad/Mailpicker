@@ -88,4 +88,6 @@ ehthumbs.db
 Thumbs.db
 dist/
 share-package/
+shareable-apps/
+release-package/
 *.zip
